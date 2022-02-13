@@ -1,17 +1,35 @@
-import { useState, useEffect, createRef, useRef } from "react";
-import { Table } from "./components/table";
+import { useState, useEffect, createRef } from "react";
+import Spreadsheet from "react-spreadsheet";
 
 
 export default function App() {
   const [file, setFile] = useState();
-  const [array, setArray] = useState([]);
+  const [csvData, setcsvData] = useState();
   const [drag, setDrag] = useState(false);
+  const [tableData, setTable] = useState();
 
 
   let dropRef = createRef();
   let dragCounter = 0;
 
+
+
   const fileReader = new FileReader();
+
+  const createData = (initialData) => {
+    if (!initialData) return
+
+
+    //const keys = [...Object.keys(Object.assign({}, ...initialData))].reduce((acc, cur) => [...acc, { value: cur }], [])
+    const keys = [...Object.keys(...initialData)].reduce((acc, cur) => [...acc, { value: cur }], [])
+
+    return initialData.reduce((acc, cur) => {
+      const temp = [...Object.values({ ...cur })].reduce((acc2, cur2) => [...acc2, { value: cur2 }], [])
+      return [...acc, temp]
+    }, [[...keys]])
+  }
+
+
 
   const handleOnChange = (e) => {
     setFile(e.target.files[0]);
@@ -32,14 +50,15 @@ export default function App() {
   };
 
 
-  const handleOnSubmit = (e) => {
+  const handleOnSubmit = e => {
     e.preventDefault();
+
 
     if (file) {
       fileReader.onload = function (event) {
         const text = event.target.result;
         const json = CSVToJSON(text, ",");
-        setArray(json);
+        setcsvData(json);
 
         console.log("console especial", json);
 
@@ -49,6 +68,16 @@ export default function App() {
     }
   };
 
+
+  const addLine = e => {
+    console.log("eu sou um botão")
+    setcsvData([...csvData, { id: "1", nome: "luana", telefone: 7647345347 }])
+    setTable([...csvData, {}])
+  };
+
+  useEffect(() => {
+    console.log("eu sou um csvData", csvData)
+  }, [csvData]);
 
 
   const handleDrag = e => {
@@ -96,6 +125,10 @@ export default function App() {
     };
   });
 
+  useEffect(() => {
+    setTable(createData(csvData))
+  }, [csvData]);
+
 
   return (
     <div style={{ textAlign: "center" }}>
@@ -112,16 +145,19 @@ export default function App() {
 
 
         <button
-          onClick={(e) => {
-            handleOnSubmit(e);
-          }}
+          onClick={e => handleOnSubmit(e)}
         >
           IMPORT CSV
         </button>
       </form>
 
       <br />
-      {file && <Table array={array} />}
+      {tableData && <Spreadsheet data={tableData} onChange={setTable} />}
+      <button
+        onClick={e => addLine(e)}
+      >
+        Adicionar de forma fácil
+      </button>
 
     </div>
   );
